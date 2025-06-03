@@ -1,0 +1,92 @@
+# Ignore all hidden files and folders
+.*
+
+# But keep the .gitignore file itself
+!.gitignore
+
+# Ignore the contents of the models folder, but keep the folder itself
+models/
+!models/
+
+# Common hidden directories to ignore
+.idea/
+.vscode/
+.history/
+.svn/
+.cache/
+.tmp/
+.temp/
+
+# OS-specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build files and logs
+build/
+dist/
+logs/
+*.log
+*.tmp
+
+# Python-specific files
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment files
+venv/
+ENV/
+env/
+
+# IDE-specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local development files
+*.local
+
+# Note: Update this .gitignore file as needed for your specific project requirements

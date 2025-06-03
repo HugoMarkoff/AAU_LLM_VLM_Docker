@@ -50,9 +50,12 @@ RUN python3.11 -m pip install torch==2.1.0+cu121 torchvision==0.16.0+cu121 torch
 # Set working directory
 WORKDIR /app
 
-# Copy requirements and install Python dependencies
+# Install RoboPoint first (with its pinned older dependencies)
+RUN python3.11 -m pip install git+https://github.com/wentaoyuan/RoboPoint.git
+
+# Copy requirements and install/upgrade all dependencies
 COPY requirements.txt .
-RUN python3.11 -m pip install --no-cache-dir -r requirements.txt
+RUN python3.11 -m pip install --no-cache-dir --upgrade -r requirements.txt
 
 # Create necessary directories
 RUN mkdir -p /app/logs /var/log/supervisor
@@ -72,6 +75,9 @@ RUN rm -f /etc/nginx/sites-enabled/default
 
 # Make scripts executable
 RUN chmod +x /app/*.py
+
+# Test RoboPoint installation
+RUN python3.11 -c "from robopoint.constants import IMAGE_TOKEN_INDEX; from robopoint.conversation import conv_templates; print('✓ RoboPoint installed successfully')"
 
 # Expose ports
 EXPOSE 80 8000 8001 8002
