@@ -1,0 +1,17 @@
+# requirements.txt
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.0
+torch>=2.0.0
+pillow>=10.0.0
+requests>=2.31.0
+redis==5.0.0
+ngrok==1.4.0
+numpy==1.26.4
+opencv-python==4.11.0.86
+scikit-learn==1.6.1
+psutil==6.1.1
+python-dotenv==1.0.0
+transformers==4.51.1
+safetensors==0.5.3
+accelerate==1.7.0
