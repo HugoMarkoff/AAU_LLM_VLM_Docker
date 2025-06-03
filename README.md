@@ -1,66 +1,84 @@
 # AAU_LLM_VLM_Docker
-Server code for LLMs and VLMs used for robot interaction at material and production at AAU. 
 
+Server code for LLMs and VLMs used for robot interaction at the materials and production department at AAU.
 
-# .env
+## Environment Variables
+
+Update your `.env` file with the following configuration:
+
+```env
 NGROK_AUTHTOKEN=your_actual_ngrok_auth_token_here
 NGROK_DOMAIN=YOUR_DOMAIN.ngrok-free.app
 NGROK_ENABLED=true
+```
 
+## Model Installation
 
-For models - cd into model folder
+### Qwen3-8B
 
-Find models on huggingface or elsewhere and get the whole model including safetensors:
+1. Install Git LFS (only needed once):
+   ```bash
+   sudo apt install git-lfs
+   git lfs install
+   ```
 
-Examples: 
+2. Clone the repository:
+   ```bash
+   git clone https://huggingface.co/Qwen/Qwen3-8B
+   ```
 
-For Qwen3-8B
+### Robopoint
 
-sudo apt install git-lfs # only needed once
-git lfs install
-git clone https://huggingface.co/Qwen/Qwen3-8B
+1. Install Git LFS (only needed once):
+   ```bash
+   git lfs install
+   ```
 
+2. Clone the repository:
+   ```bash
+   git clone https://huggingface.co/wentao-yuan/robopoint-v1-vicuna-v1.5-13b
+   ```
 
-For Eobopoint
+Note: The models may be large, so please be patient during the download process.
 
-git lfs install
-git clone https://huggingface.co/wentao-yuan/robopoint-v1-vicuna-v1.5-13b
+## Docker Setup
 
-The models may be large so have patience :) 
+### First-Time Installation
 
+1. Install Docker:
+   ```bash
+   https://docs.docker.com/engine/install/ubuntu/
+   ```
 
-To install docker and configure GPU for the first time 
+2. Configure NVIDIA Docker:
 
-Follow instructions here:
+   ```bash
+   # Remove any malformed entries
+   sudo rm -f /etc/apt/sources.list.d/nvidia-docker.list
 
-https://docs.docker.com/engine/install/ubuntu/
+   # Set up NVIDIA Docker repository
+   distribution="ubuntu22.04"
+   curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-docker.gpg
+   curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | \
+     sed 's#^deb https://#deb [signed-by=/usr/share/keyrings/nvidia-docker.gpg] https://#' | \
+     sed 's/\$(ARCH)/amd64/g' | \
+     sudo tee /etc/apt/sources.list.d/nvidia-docker.list
 
-THEN: 
+   # Install NVIDIA container toolkit
+   sudo apt-get update
+   sudo apt-get install -y nvidia-container-toolkit
+   sudo systemctl restart docker
 
-# Remove any malformed entries
-sudo rm -f /etc/apt/sources.list.d/nvidia-docker.list
+   # Test GPU access
+   sudo docker run --rm --gpus all nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04 nvidia-smi
+   ```
 
-# Set up NVIDIA Docker repository
-distribution="ubuntu22.04"
-curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-docker.gpg
-curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | \
-  sed 's#^deb https://#deb [signed-by=/usr/share/keyrings/nvidia-docker.gpg] https://#' | \
-  sed 's/\$(ARCH)/amd64/g' | \
-  sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+## Docker Commands
 
-# Install NVIDIA container toolkit
-sudo apt-get update
-sudo apt-get install -y nvidia-container-toolkit
-sudo systemctl restart docker
+### Rebuilding the Image
 
-# Test GPU access
-sudo docker run --rm --gpus all nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04 nvidia-smi
-
-
-Usefull Docker commands:
-
-Compleately rebuilding the image #Make sure you dont have several dockers - will purge all
-
+```bash
+# Completely rebuilding the image (purge all existing containers, images, and volumes)
 sudo docker stop $(sudo docker ps -aq)
 sudo docker rm $(sudo docker ps -aq)
 sudo docker rmi $(sudo docker images -q) --force
@@ -68,12 +86,13 @@ sudo docker volume rm $(sudo docker volume ls -q)
 sudo docker network rm $(sudo docker network ls -q)
 sudo docker system prune -a --volumes -f
 
-Building fresh:
+# Build fresh image
+sudo docker build --no-cache -t ai-model-server .  # "." means you build it from the current directory
+```
 
-sudo docker build --no-cache -t ai-model-server .  # "." meanins you build it from the path you are in, so make sure to be in ~/AAU_LLM_VLM_Docker where you have the Dockerfile
+### Running the Server
 
-Start docker:
-
+```bash
 # Run the production container
 sudo docker run -d \
   --name ai_model_server_container \
@@ -83,28 +102,35 @@ sudo docker run -d \
   -v $(pwd)/logs:/app/logs \
   --restart unless-stopped \
   ai-model-server
+```
 
-Enter and edit ode inside of the docker:
+### Accessing the Container
 
-sudo docker exec -ti ai_model_server_container /bin/bash 
-apt-get update 
+```bash
+# Enter the container to make changes
+sudo docker exec -ti ai_model_server_container /bin/bash
+apt-get update
 apt-get install nano
+```
 
-Some example commands:
+## Example Usage
 
+### Regular Chat
 
-
-# Regular chat:
-
-# none
-  curl -X POST https://YOUR_DOMAIN.ngrok-free.app/qwen3/chat \
+```bash
+# Simple chat request
+curl -X POST https://YOUR_DOMAIN.ngrok-free.app/qwen3/chat \
   -H "Content-Type: application/json" \
   -d '{
     "instructions": "none",
     "message": "What is the capital of France?"
   }'
+```
 
-# custom
+### Custom Chat
+
+```bash
+# Custom instructions request
 curl -X POST https://YOUR_DOMAIN.ngrok-free.app/qwen3/chat \
   -H "Content-Type: application/json" \
   -d '{
@@ -112,8 +138,12 @@ curl -X POST https://YOUR_DOMAIN.ngrok-free.app/qwen3/chat \
     "message": "Pick up the red ball",
     "custom_instructions": "You are a helpful robot assistant. Always respond with enthusiasm and provide clear step-by-step instructions."
   }'
+```
 
-# streaming chat:
+### Streaming Chat
+
+```bash
+# Streaming chat request
 curl -s -X POST https://YOUR_DOMAIN.ngrok-free.app/qwen3/chat-stream \
   -H "Content-Type: application/json" \
   -H "Accept: text/event-stream" \
@@ -127,3 +157,10 @@ curl -s -X POST https://YOUR_DOMAIN.ngrok-free.app/qwen3/chat-stream \
       printf "%s" "${line#data: }"
     fi
   done
+```
+
+## Notes
+
+- Be patient when working with large models, as they may take significant time to download and initialize.
+- Ensure you have proper GPU support configured for optimal performance.
+- Regularly clean up Docker resources to avoid running out of disk space.
