@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 MAIN_PORT = 8000
 QWEN3_PORT = 8001
 ROBOPOINT_PORT = 8002
+DEEPSEEK_PORT = 8003
 
 # Ngrok Configuration
 load_dotenv()
@@ -64,7 +65,21 @@ def setup_ngrok_tunnel():
             domain=NGROK_DOMAIN if NGROK_DOMAIN else None
         )
         
-        logger.info(f"🌐 Ngrok tunnel established: {listener.url()}")
+        # Handle different ngrok SDK versions
+        try:
+            if hasattr(listener, 'url'):
+                tunnel_url = listener.url()
+            elif hasattr(listener, 'public_url'):
+                tunnel_url = listener.public_url
+            else:
+                # For newer SDK versions, the URL might be accessible differently
+                tunnel_url = str(listener)
+            
+            logger.info(f"🌐 Ngrok tunnel established: {tunnel_url}")
+        except Exception as url_error:
+            logger.warning(f"Could not get tunnel URL: {url_error}")
+            logger.info("🌐 Ngrok tunnel established (URL retrieval failed)")
+        
         return listener
         
     except Exception as e:
@@ -142,7 +157,15 @@ app.add_middleware(
 async def root():
     tunnel_info = {}
     if ngrok_listener:
-        tunnel_info["ngrok_url"] = str(ngrok_listener.url())
+        try:
+            if hasattr(ngrok_listener, 'url'):
+                tunnel_info["ngrok_url"] = str(ngrok_listener.url())
+            elif hasattr(ngrok_listener, 'public_url'):
+                tunnel_info["ngrok_url"] = ngrok_listener.public_url
+            else:
+                tunnel_info["ngrok_url"] = str(ngrok_listener)
+        except:
+            tunnel_info["ngrok_url"] = "URL retrieval failed"
     elif NGROK_DOMAIN:
         tunnel_info["ngrok_url"] = f"https://{NGROK_DOMAIN}"
     
@@ -162,11 +185,23 @@ async def root():
 
 @app.get("/health")  
 async def health_check():
+    tunnel_url = None
+    if ngrok_listener:
+        try:
+            if hasattr(ngrok_listener, 'url'):
+                tunnel_url = str(ngrok_listener.url())
+            elif hasattr(ngrok_listener, 'public_url'):
+                tunnel_url = ngrok_listener.public_url
+            else:
+                tunnel_url = str(ngrok_listener)
+        except:
+            tunnel_url = "URL retrieval failed"
+    
     return {
         "status": "healthy",
         "timestamp": time.time(),
         "tunnel_active": ngrok_listener is not None,
-        "ngrok_url": str(ngrok_listener.url()) if ngrok_listener else None
+        "ngrok_url": tunnel_url
     }
 
 if __name__ == "__main__":

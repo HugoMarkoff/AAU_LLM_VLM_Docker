@@ -12,6 +12,3 @@ opencv-python==4.11.0.86
 scikit-learn==1.6.1
 psutil==6.1.1
 python-dotenv==1.0.0
-transformers==4.51.1
-safetensors==0.5.3
-accelerate==1.7.0

@@ -57,6 +57,13 @@ RUN python3.11 -m pip install git+https://github.com/wentaoyuan/RoboPoint.git
 COPY requirements.txt .
 RUN python3.11 -m pip install --no-cache-dir --upgrade -r requirements.txt
 
+# Making sure correct versions of these packages are applied AFTER requirements 
+RUN python3.11 -m pip install --upgrade --force-reinstall \
+    transformers==4.51.1 \
+    safetensors==0.5.3 \
+    accelerate==1.7.0 \
+    protobuf<=3.20.3
+
 # Create necessary directories
 RUN mkdir -p /app/logs /var/log/supervisor
 

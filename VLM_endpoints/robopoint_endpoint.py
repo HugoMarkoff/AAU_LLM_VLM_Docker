@@ -1,5 +1,5 @@
 ###############################################################################
-# robopoint.py – RoboPoint VLM endpoint for coordinate detection
+# robopoint_endpoint.py – RoboPoint VLM endpoint for coordinate detection
 # 
 # USAGE:
 # POST /predict
@@ -330,7 +330,7 @@ async def health_check():
 ###############################################################################
 if __name__ == "__main__":
     uvicorn.run(
-        "robopoint_endpoint:app", 
+        "robopoint_endpoint:app",
         host="0.0.0.0",
         port=ROBOPOINT_PORT,
         log_level="info",

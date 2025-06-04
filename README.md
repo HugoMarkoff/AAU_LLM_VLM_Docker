@@ -10,6 +10,7 @@ Update your `.env` file with the following configuration:
 NGROK_AUTHTOKEN=your_actual_ngrok_auth_token_here
 NGROK_DOMAIN=YOUR_DOMAIN.ngrok-free.app
 NGROK_ENABLED=true
+DEEPSEEK_API_KEY=your_actual_key_here
 ```
 
 ## Model Installation
@@ -87,7 +88,7 @@ sudo docker network rm $(sudo docker network ls -q)
 sudo docker system prune -a --volumes -f
 
 # Build fresh image
-sudo docker build --no-cache -t ai-model-server .  # "." means you build it from the current directory
+sudo docker build --no-cache -t ai-server .  # "." means you build it from the current directory
 ```
 
 ### Running the Server
@@ -95,20 +96,19 @@ sudo docker build --no-cache -t ai-model-server .  # "." means you build it from
 ```bash
 # Run the production container
 sudo docker run -d \
-  --name ai_model_server_container \
+  --name ai_container \
   --gpus all \
   --env-file .env \
   -p 8080:80 \
   -v $(pwd)/logs:/app/logs \
-  --restart unless-stopped \
-  ai-model-server
+  ai-server
 ```
 
 ### Accessing the Container
 
 ```bash
 # Enter the container to make changes
-sudo docker exec -ti ai_model_server_container /bin/bash
+sudo docker exec -ti ai_container /bin/bash
 apt-get update
 apt-get install nano
 ```
@@ -157,6 +157,16 @@ curl -s -X POST https://YOUR_DOMAIN.ngrok-free.app/qwen3/chat-stream \
       printf "%s" "${line#data: }"
     fi
   done
+```
+
+```bash
+curl -X POST https://YOUR_DOMAIN.ngrok-free.app/robopoint/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instructions": "default",
+    "message": "Find the red cup",
+    "image": "'$(base64 -w 0 /path/to/your/image.jpg)'"
+  }'
 ```
 
 ## Notes
