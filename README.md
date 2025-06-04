@@ -169,8 +169,203 @@ curl -X POST https://YOUR_DOMAIN.ngrok-free.app/robopoint/predict \
   }'
 ```
 
-## Notes
+## How to Set Up New Online LLM Endpoints
 
-- Be patient when working with large models, as they may take significant time to download and initialize.
-- Ensure you have proper GPU support configured for optimal performance.
-- Regularly clean up Docker resources to avoid running out of disk space.
+This guide explains how to add new online LLM services (like Claude, GPT, etc.) to your server following the DeepSeek implementation pattern.
+
+### Step 1: Environment Variables
+
+Add your API key to the `.env` file:
+```env
+YOUR_SERVICE_API_KEY=your_actual_api_key_here
+```
+
+### Step 2: Create the Endpoint File
+
+Create a new file in `LLM_endpoints/your_service_endpoint.py` following this structure:
+
+```python
+###############################################################################
+# your_service_endpoint.py – Your Service Online LLM endpoint
+###############################################################################
+import os
+from openai import OpenAI  # or the appropriate SDK
+from dotenv import load_dotenv
+
+# Configuration
+YOUR_SERVICE_PORT = 8004  # Choose next available port
+load_dotenv()
+API_KEY = os.getenv("YOUR_SERVICE_API_KEY")
+
+# Initialize client (adapt to your service's SDK)
+client = OpenAI(
+    api_key=API_KEY,
+    base_url="https://api.your-service.com"  # Your service's base URL
+)
+
+# Follow the same FastAPI structure as deepseek_online_endpoint.py
+# Include: ChatRequest, ChatResponse, chat_endpoint, chat_stream_endpoint, health_check
+```
+
+### Step 3: Update Configuration Files
+
+1. **requirements.txt** - Add necessary SDK:
+   ```
+   your-service-sdk>=1.0.0
+   ```
+
+2. **supervisord.conf** - Add program section:
+   ```ini
+   [program:your_service_endpoint]
+   command=python3.11 /app/LLM_endpoints/your_service_endpoint.py
+   directory=/app
+   autostart=true
+   autorestart=true
+   startsecs=10
+   stdout_logfile=/app/logs/your_service_stdout.log
+   stderr_logfile=/app/logs/your_service_stderr.log
+   environment=PYTHONPATH="/app"
+   priority=3
+   ```
+
+3. **nginx.conf** - Add routing:
+   ```nginx
+   location /your-service/chat-stream {
+       proxy_pass http://localhost:8004/chat-stream;
+       proxy_buffering off;
+       proxy_cache off;
+       proxy_set_header X-Accel-Buffering no;
+       proxy_read_timeout 600s;
+   }
+
+   location /your-service/ {
+       rewrite ^/your-service/(.*) /$1 break;
+       proxy_pass http://localhost:8004;
+   }
+   ```
+
+4. **main.py** - Update service listings and port references
+
+5. **Dockerfile** - Add new port to EXPOSE line
+
+### Step 4: API Usage Examples
+
+Once deployed, you can use your new endpoint:
+
+```bash
+# Non-streaming chat
+curl -X POST https://YOUR_DOMAIN.ngrok-free.app/your-service/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instructions": "default",
+    "message": "Pick up the red ball",
+    "model": "your-model-name",
+    "stream": false
+  }'
+
+# Streaming chat
+curl -s -X POST https://YOUR_DOMAIN.ngrok-free.app/your-service/chat-stream \
+  -H "Content-Type: application/json" \
+  -H "Accept: text/event-stream" \
+  -N --no-buffer \
+  -d '{
+    "instructions": "custom",
+    "message": "Count from 1 to 10",
+    "model": "your-model-name",
+    "custom_instructions": "Count slowly with explanations"
+  }'
+```
+
+### Step 5: Common Service Configurations
+
+#### OpenAI GPT
+```python
+from openai import OpenAI
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Models: "gpt-4", "gpt-3.5-turbo", etc.
+```
+
+#### Anthropic Claude
+```python
+import anthropic
+client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+# Models: "claude-3-opus-20240229", "claude-3-sonnet-20240229", etc.
+# Note: Claude has different API structure, adapt accordingly
+```
+
+#### Google Gemini
+```python
+import google.generativeai as genai
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+# Models: "gemini-pro", "gemini-pro-vision", etc.
+```
+
+### Service-Specific Considerations
+
+- **Rate Limits**: Each service has different rate limits, consider adding rate limiting
+- **Token Limits**: Adjust max_tokens based on service capabilities
+- **Streaming Support**: Not all services support streaming in the same way
+- **Error Handling**: Each API has different error response formats
+- **Model Names**: Update available models list for each service
+
+### Testing Your New Endpoint
+
+1. **Health Check**: `GET /your-service/health`
+2. **Models List**: `GET /your-service/models` (if implemented)
+3. **Simple Chat**: Test with basic message
+4. **Streaming**: Test streaming functionality
+5. **Error Handling**: Test with invalid requests
+
+## DeepSeek Usage Examples
+
+### Basic Chat Request
+```bash
+curl -X POST https://YOUR_DOMAIN.ngrok-free.app/deepseek/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instructions": "default",
+    "message": "Pick up the red ball and place it on the table",
+    "model": "deepseek-chat",
+    "stream": false
+  }'
+```
+
+### Reasoning Model
+```bash
+curl -X POST https://YOUR_DOMAIN.ngrok-free.app/deepseek/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instructions": "none",
+    "message": "Explain the physics behind throwing a ball",
+    "model": "deepseek-reasoner",
+    "stream": false
+  }'
+```
+
+### Streaming Chat
+```bash
+curl -s -X POST https://YOUR_DOMAIN.ngrok-free.app/deepseek/chat-stream \
+  -H "Content-Type: application/json" \
+  -H "Accept: text/event-stream" \
+  -N --no-buffer \
+  -d '{
+    "instructions": "custom",
+    "message": "Count from 1 to 5 slowly",
+    "model": "deepseek-chat",
+    "custom_instructions": "Count one number at a time with a brief pause description"
+  }' | while IFS= read -r line; do
+    if [[ $line == data:* ]]; then
+      printf "%s" "${line#data: }"
+    fi
+  done
+```
+
+### Check Available Models
+```bash
+curl https://YOUR_DOMAIN.ngrok-free.app/deepseek/models
+```
+
+### Health Check
+```bash
+curl https://YOUR_DOMAIN.ngrok-free.app/deepseek/health
+```

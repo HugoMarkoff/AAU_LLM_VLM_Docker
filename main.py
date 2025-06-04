@@ -153,6 +153,7 @@ app.add_middleware(
 ###############################################################################
 # ENDPOINTS
 ###############################################################################
+
 @app.get("/")
 async def root():
     tunnel_info = {}
@@ -173,16 +174,19 @@ async def root():
         "message": "AI Model Server is running",
         "services": {
             "qwen3": f"Port {QWEN3_PORT}",
-            "robopoint": f"Port {ROBOPOINT_PORT}"
+            "robopoint": f"Port {ROBOPOINT_PORT}",
+            "deepseek": f"Port {DEEPSEEK_PORT}"
         },
         "endpoints": {
             "qwen3_chat": "/qwen3/chat",
             "qwen3_chat_stream": "/qwen3/chat-stream", 
-            "robopoint_predict": "/robopoint/predict"
+            "robopoint_predict": "/robopoint/predict",
+            "deepseek_chat": "/deepseek/chat",
+            "deepseek_chat_stream": "/deepseek/chat-stream",
+            "deepseek_models": "/deepseek/models"
         },
         **tunnel_info
     }
-
 @app.get("/health")  
 async def health_check():
     tunnel_url = None

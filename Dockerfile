@@ -87,7 +87,7 @@ RUN chmod +x /app/*.py
 RUN python3.11 -c "from robopoint.constants import IMAGE_TOKEN_INDEX; from robopoint.conversation import conv_templates; print('✓ RoboPoint installed successfully')"
 
 # Expose ports
-EXPOSE 80 8000 8001 8002
+EXPOSE 80 8000 8001 8002 8003
 
 # Start supervisor
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

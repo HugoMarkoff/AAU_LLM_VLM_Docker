@@ -401,7 +401,7 @@ async def health_check():
 ###############################################################################
 if __name__ == "__main__":
     uvicorn.run(
-        "qwen3:app",
+        "qwen3_endpoint:app",  
         host="0.0.0.0",
         port=QWEN3_PORT,
         log_level="info",
