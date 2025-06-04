@@ -62,7 +62,7 @@ RUN python3.11 -m pip install --upgrade --force-reinstall \
     transformers==4.51.1 \
     safetensors==0.5.3 \
     accelerate==1.7.0 \
-    protobuf<=3.20.3
+    "protobuf<=3.20.3"
 
 # Create necessary directories
 RUN mkdir -p /app/logs /var/log/supervisor
